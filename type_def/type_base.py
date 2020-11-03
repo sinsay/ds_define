@@ -1,13 +1,7 @@
 import enum
-import typing
-import weakref
-from collections import namedtuple
 
-from ..exception import ValidationError
-
-ERROR_TYPE = namedtuple("ERROR_TYPE", ["null", "invalid", 'convert'])("null", "invalid", 'convert')
-
-VALID_TYPE = namedtuple("VALID_TYPE", ["null", "invalid"])("null", "invalid")
+from .type_error import *
+from .type_valid_base import Validate, EmptyValidate, fail
 
 
 class ArgSource(enum.Enum):
@@ -23,11 +17,13 @@ def default_extractor(v):
     return v
 
 
-def empty_weak():
-    return None
-
-
 class ColumnInfo(object):
+    """
+    数据库列定义信息，包括了与数据库匹配的一系列参数配置，主要用于在创建
+    数据模型定义时保持与数据库一致，或者是利用这些配置信息来管理跟踪对应
+    的数据库表
+    """
+
     def __init__(
             self,
             primary_key: bool = False,
@@ -37,17 +33,80 @@ class ColumnInfo(object):
             length: int = None,
             foreign: str = None,
     ):
-        self.primary_key: bool = primary_key
-        self.nullable: bool = nullable
-        self.index: bool = index
-        self.unique: bool = unique
-        self.length: int = length
-        self.foreign: str = foreign
-        self.column_type: str = ""
-        self.name: str = ""
+        self._primary_key: bool = primary_key
+        self._nullable: bool = nullable
+        self._index: bool = index
+        self._unique: bool = unique
+        self._length: int = length
+        self._foreign: str = foreign
+        self._column_type: str = ""
+        self._name: str = ""
 
-    def set_name(self, name: str):
-        self.name = name
+    def primary(self, primary_key: bool = True):
+        """
+        设置是否为主键
+        :param primary_key:
+        :return:
+        """
+        self._primary_key = primary_key
+        return self
+
+    def nullable(self, nullable: bool = True):
+        """
+        设置是否可为空
+        :param nullable:
+        :return:
+        """
+        self._nullable = nullable
+        return self
+
+    def index(self, index: bool = True):
+        """
+        设置是否建立索引
+        :param index:
+        :return:
+        """
+        self._index = index
+        return self
+
+    def unique(self, unique: bool = True):
+        """
+        设置是否唯一
+        :param unique:
+        :return:
+        """
+        self._unique = unique
+        return self
+
+    def length(self, length: int):
+        """
+        设置长度
+        :param length:
+        :return:
+        """
+        self._length = length
+        return self
+
+    def foreign(self, foreign: str):
+        """
+        设置外键信息
+        :param foreign:
+        :return:
+        """
+        self._foreign = foreign
+        return self
+
+    def type(self, column_type: str):
+        """
+        设置字段类型
+        :param column_type:
+        :return:
+        """
+        self._column_type = column_type
+        return self
+
+    def name(self, name: str):
+        self._name = name
 
     def update(self, other: 'ColumnInfo'):
         """
@@ -60,17 +119,39 @@ class ColumnInfo(object):
 
             setattr(self, attr_name, attr)
 
+    def get_name(self) -> str:
+        return self._name
+
+    def get_foreign(self) -> typing.Union[None, str]:
+        return self._foreign
+
+    def get_length(self) -> int:
+        return self._length
+
+    def get_unique(self) -> bool:
+        return self._unique
+
+    def get_index(self) -> bool:
+        return self._index
+
+    def get_nullable(self) -> bool:
+        return self._nullable
+
+    def get_primary(self) -> bool:
+        return self._primary_key
+
     def get_type(self) -> str:
         """
         获取当前 Column 在 SQLAlchemy 中对应的类型定义
         """
-        if not self.column_type:
+        if not self._column_type:
             raise ValueError("The type of ColumnInfo can not be null.")
-        return self.column_type
+        return self._column_type
 
     def __repr__(self):
-        return f"<ColumnInfo: name: {self.name}, primary_key: {self.primary_key}, nullable: {self.nullable},\
-index: {self.index}, unique: {self.unique}, length: {self.length}, foreign: {self.foreign}, type: {self.column_type}>"
+        return f"<ColumnInfo: name: {self.get_name()}, primary_key: {self.get_primary()}, " \
+               f"nullable: {self.get_nullable()}, index: {self.get_index()}, unique: {self.get_unique()}, " \
+               f"length: {self.get_length()}, foreign: {self.get_foreign()}, type: {self.get_type()}>"
 
 
 class IndexInfo(object):
@@ -85,8 +166,8 @@ class IndexInfo(object):
             columns: list = None,
             index_type: str = BTREE,
             prefix: str = '',
-            *args,
-            **kwargs
+            *_args,
+            **_kwargs
     ):
         self.columns: list = columns
         self.index_type: str = index_type
@@ -95,54 +176,16 @@ class IndexInfo(object):
         if prefix:
             self.index_name = f'{prefix}_{self.index_name}'
 
-    def get_type(self) -> str:
+    @staticmethod
+    def get_type() -> str:
         """
         获取当前 Column 在 SQLAlchemy 中对应的类型定义
         """
         return 'table_index'
 
     def __repr__(self):
-        return f"<IndexInfo: columns: ({','.join(self.columns)}), index_name: {self.index_name}, index_type: {self.index_type}>"
-
-
-class Validate(object):
-    __validate__ = True
-
-    default_error_messages = {
-        VALID_TYPE.null: "Must support a value is not None",
-    }
-
-    def __init__(self):
-        self.host: WeakRpcType = empty_weak
-        self.error_messages = {}
-        self.collection_err_msg()
-
-    def valid(self, v: any):
-        raise NotImplementedError
-
-    def gen_invalid(self) -> any:
-        raise NotImplementedError
-
-    def fail(self, key, **kwargs):
-        return fail(self, key, **kwargs)
-
-    def set_host(self, host: 'RpcType'):
-        self.host: WeakRpcType = weakref.ref(host)
-
-    def collection_err_msg(self):
-        # Collect default error message from self and parent classes
-        messages = {}
-        for cls in reversed(self.__class__.__mro__):
-            messages.update(getattr(cls, 'default_error_messages', {}))
-        self.error_messages = messages
-
-
-class EmptyValidate(Validate):
-    def valid(self, v: any):
-        return None
-
-    def gen_invalid(self) -> any:
-        return None
+        return f"<IndexInfo: columns: ({','.join(self.columns)}), index_name: {self.index_name}, " \
+               f"index_type: {self.index_type}>"
 
 
 class RpcType(object):
@@ -158,7 +201,7 @@ class RpcType(object):
 
     def __init__(self, default_value, required: bool, description: str = "",
                  validator: Validate = None, validate_extractor=None, origin=None,
-                 load_only=True, dumps_ony=True, *args, **kwargs):
+                 load_only=True, dump_only=True, *args, **kwargs):
         """
         @param default_value: 默认值
         @param required: 是否必须
@@ -182,7 +225,7 @@ class RpcType(object):
 
         self.origin = origin
         self.load_only = load_only
-        self.dumps_ony = dumps_ony
+        self.dump_only = dump_only
 
     def get_type(self):
         raise Exception("RpcType 是虚拟基类，要获得具体类型需调用具体类型的实现")
@@ -222,6 +265,7 @@ class RpcType(object):
             unique: bool = False,
             length: int = None,
             foreign: str = None,
+            column: typing.Union[ColumnInfo, None] = None
     ):
         """
         将该字段转换为数据库字段，当调用了该函数后，Generator 会为包含了该字段的 Model 创建
@@ -232,6 +276,7 @@ class RpcType(object):
         @param unique: 该字段是否设置唯一
         @param length: 该字段的长度
         @param foreign: 该字段如果为外键，填写的是其主表的字段名，如 XXTable.id
+        @param column: 该字段的列信息，如果传递了列信息，则将全部使用列信息中的定义
         """
         self._is_column = True
         ci = ColumnInfo(
@@ -243,6 +288,10 @@ class RpcType(object):
             foreign=foreign,
         )
 
+        ci.type(self.get_column_type())
+
+        if column:
+            ci = column
         self._column_info.update(ci)
         return self
 
@@ -282,20 +331,3 @@ class RpcType(object):
 
     def deserialize(self, value: any) -> any:
         raise NotImplementedError('Type:`{}` not implement deserialize method.'.format(self))
-
-
-def fail(validator, key, **kwargs):
-    try:
-        msg = validator.error_messages[key]
-    except KeyError:
-        class_name = validator.__class__.__name__
-        msg = (
-            'ValidationError raised by `{class_name}`, but error key `{key}` does '
-            'not exist in the `error_messages` dictionary.'
-        ).format(class_name=class_name, key=key)
-        raise ValidationError(msg)
-    message_string = msg.format(**kwargs)
-    raise ValidationError(message_string)
-
-
-WeakRpcType = typing.Callable[[], typing.Union[None, RpcType]]
