@@ -18,6 +18,13 @@ class OpTag(object):
     And = "and"
     Or = "or"
 
+    Select = "select"
+    Update = "update"
+    Join = "join"
+    Paging = "paging"
+    Filter = "filter"
+    Alias = "alias"
+
     _Operator = [Equal, NotEqual, Less, LessOrEqual, Greater, GreaterOrEqual, In, NotIn]
     _Logical = [And, Or]
 

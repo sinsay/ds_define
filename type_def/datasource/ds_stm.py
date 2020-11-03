@@ -129,6 +129,9 @@ class AllowUpdate(AllowFilter):
 
 
 class Updater(AllowFilter):
+
+    __tag__ = OpTag.Update
+
     def __init__(self, source: 'DataSource', update_field: ModelFieldOp, *more: ModelFieldOp):
         super(Updater, self).__init__(source)
         self._update_op = [update_field] + list(more)
@@ -145,6 +148,9 @@ class Filter(AllowPaging):
     """
     Filter 状态，提供了过滤接口，用于定义过滤数据的表达式
     """
+
+    __tag__ = OpTag.Filter
+
 
     def __init__(self, source: 'DataSource', filter_op: ModelFieldOp):
         super(Filter, self).__init__(source)
@@ -180,6 +186,8 @@ class Alias(Operator):
     设置子查询的别名, 只能作为表达式的叶子节点
     """
 
+    __tag__ = OpTag.Alias
+
     def __init__(self, source: 'DataSource', alias: str):
         super().__init__(source)
         self._alias = alias
@@ -189,6 +197,8 @@ class Select(AllowFilter, AllowPaging, AllowJoin, AllowAlias):
     """
     Select 状态，提供了搜索入口，在该状态下可以进入 Filter、Paging、Join 等状态
     """
+
+    __tag__ = OpTag.Select
 
     def __init__(self, source: 'DataSource', model_or_field: SelectField,
                  *more: SelectField):
@@ -220,6 +230,8 @@ class Join(AllowFilter, AllowPaging, AllowAlias):
     Join 状态，用于提供链表查询定义的接口
     """
 
+    __tag__ = OpTag.Join
+
     def __init__(self, source: 'DataSource'):
         super(Join, self).__init__(source)
         self._join_info: typing.List[ModelFieldOp] = []
@@ -246,6 +258,8 @@ class Paging(AllowAlias):
     """
     Paging 状态，用于提供分页接口
     """
+
+    __tag__ = OpTag.Paging
 
     def __init__(self, source: 'DataSource'):
         super(Paging, self).__init__(source)

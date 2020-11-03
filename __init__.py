@@ -1,5 +1,5 @@
 from .type_def import fields, Bool, Integer, Float, List, Dict, RpcType,\
-    rpc_doc_type_key, rpc_doc_resp_key, rpc_doc_args_key
+    rpc_doc_type_key, rpc_doc_resp_key, rpc_doc_args_key, datasource
 
 from .web import namespace
 

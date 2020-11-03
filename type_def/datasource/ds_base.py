@@ -6,6 +6,18 @@ class Operator:
     操作基类，所有的 DataSource 接口都需要继承该基类
     """
 
+    __tag__ = None
+
+    def is_tag(self, tag: str) -> bool:
+        """
+        判断操作基类是否指定类型
+        """
+        if not self.__tag__:
+            raise NotImplementedError(
+                f"The Operator {type(self)} Need Implement the logic and set the tag to an unique identifier")
+
+        return self.__tag__ == tag
+
     def __init__(self, source: 'DataSource'):
         self._source = source
         self._source.add_exp(self)
