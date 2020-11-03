@@ -1,6 +1,6 @@
 import typing
 
-from type_def.type_base import ColumnInfo
+from ..type_base import ColumnInfo
 
 
 class OpTag(object):

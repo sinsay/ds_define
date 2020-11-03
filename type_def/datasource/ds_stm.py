@@ -4,12 +4,12 @@
 能够直观的看出对应的数据接口会触发的具体操作
 """
 
-from type_def.datasource.ds_base import DataSource, Operator
-from type_def.datasource.ds_field import ModelField, ModelFieldOp, OpTag
+from .ds_base import DataSource, Operator
+from .ds_field import ModelField, ModelFieldOp, OpTag
 
-from type_def.type_error import *
-from type_def.type_check import is_model
-from util import EnumBase
+from ..type_error import *
+from ..type_check import is_model
+from ...util import EnumBase
 
 SelectField = typing.Union[ModelField, typing.Any]
 
