@@ -1,6 +1,6 @@
 import typing
 
-from .type_def.type_util import is_builtin_type
+from .util import is_builtin_type
 from .ctx import Context
 
 

@@ -40,7 +40,7 @@ class TraceInfo(object):
         :param span_id:
         :param meta
         """
-        self.identifier = identifier
+        self.identifier = identifier or "UNKNOWN.UNKNOWN"
         self.trace_id = trace_id or str(bson.ObjectId())
         self.span_id = span_id
         self.next_id = -1

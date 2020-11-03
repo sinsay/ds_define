@@ -2,15 +2,17 @@ import random
 import typing
 
 from ..util.rand_str import rand_str
-from .type_base import Validate, EmptyValidate, VALID_TYPE
+from .type_error import ValidationError
 from .type_def import List as ListType, Dict as DictType
-from ..exception import ValidationError
+from .type_valid_base import Validate, VALID_TYPE, EmptyValidate
 
 Number = typing.Union[int, float]
 
 
 class GreaterValidate(Validate):
-
+    """
+    GreaterValidate Check the type should greater than configure value
+    """
     default_error_messages = {
         VALID_TYPE.invalid: "must greater then {n}, but got {v}"
     }
@@ -36,7 +38,6 @@ class GreaterValidate(Validate):
 
 
 class LessValidate(Validate):
-
     default_error_messages = {
         "invalid": "must less then {n}, but got {v}"
     }
@@ -62,7 +63,6 @@ class LessValidate(Validate):
 
 
 class RangeValidate(Validate):
-
     default_error_messages = {
         "invalid": "{v} is out of range [{min}, {max}]"
     }
@@ -96,7 +96,6 @@ class RangeValidate(Validate):
 
 
 class ChoiceValidate(Validate):
-
     default_error_messages = {
         "invalid": "{v} is not valid with choice condition: n = {n}, data = {data}"
     }
@@ -151,7 +150,6 @@ class ChoiceValidate(Validate):
 
 
 class StringValidate(Validate):
-
     default_error_messages = {
         "invalid": "{v} is not valid with choice condition: n = {n}, data = {data}"
     }
@@ -283,6 +281,7 @@ class ValidCombiner(Validate):
     """
     组合验证器的基类，后续通过它为各种验证器的组合实现算法
     """
+
     def valid(self, v: any):
         raise ValidationError("Not Implement ValidCombiner")
 

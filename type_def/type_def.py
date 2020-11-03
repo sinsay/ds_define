@@ -5,7 +5,8 @@ import typing
 
 import pytz
 
-from .type_base import ValidationError, Validate, RpcType, ERROR_TYPE
+from .type_error import ERROR_TYPE, ValidationError
+from .type_base import Validate, RpcType, ColumnInfo
 
 
 class Void(RpcType):
@@ -32,6 +33,7 @@ class Bool(RpcType):
     default_error_messages = {
         ERROR_TYPE.invalid: 'Must be a valid boolean but get type: {input_type}'
     }
+
     TRUE_VALUES = {
         't', 'T',
         'y', 'Y', 'yes', 'YES',
@@ -399,6 +401,13 @@ class Dict(RpcType):
         """
         self.type_dict[name] = type_info
 
+    def clear_field(self):
+        """
+        移除所有已添加的字段信息
+        :return:
+        """
+        self.type_dict = {}
+
     def get_type(self):
         return "dict"
 
@@ -512,6 +521,27 @@ class Enum(RpcType):
 
         self.enum_dict[key] = e
 
+    def column(
+            self,
+            primary_key: bool = False,
+            nullable: bool = False,
+            index: bool = False,
+            unique: bool = False,
+            length: int = None,
+            foreign: str = None,
+            column: typing.Union[ColumnInfo, None] = None
+    ):
+        new_self = copy.deepcopy(self)
+        return super(Enum, new_self).column(
+            primary_key=primary_key,
+            nullable=nullable,
+            index=index,
+            unique=unique,
+            length=length,
+            foreign=foreign,
+            column=column
+        )
+
     def get_type(self):
         return "enum"
 
@@ -537,47 +567,3 @@ class Enum(RpcType):
             return self.rpc_type.deserialize(value)
         except ValidationError:
             self.fail(ERROR_TYPE.invalid, input_type=type(value))
-
-
-base_tags = ["B", "I", "DT", "DTT", "F", "V", "DB", "S"]
-numeric_tags = ["I", "F", "DB"]
-
-
-def _check_tag(t: RpcType, tag: str) -> bool:
-    return getattr(t, "__rpc_tag__", "") == tag
-
-
-def is_base_type(t: RpcType) -> bool:
-    return getattr(t, "__rpc_tag__", None) in base_tags
-
-
-def is_list(t: RpcType) -> bool:
-    return _check_tag(t, "L")
-
-
-def is_dict(t: RpcType) -> bool:
-    return _check_tag(t, "D")
-
-
-def is_numeric(t: RpcType) -> bool:
-    return getattr(t, "__rpc_tag__", None) in numeric_tags
-
-
-def is_int(t: RpcType) -> bool:
-    return getattr(t, "__rpc_tag__", None) == "I"
-
-
-def is_float(t: RpcType) -> bool:
-    return getattr(t, "__rpc_tag__", None) == "F"
-
-
-def is_string(t: RpcType) -> bool:
-    return _check_tag(t, "S")
-
-
-def is_boolean(t: RpcType) -> bool:
-    return _check_tag(t, "B")
-
-
-def is_enum(t: RpcType) -> bool:
-    return _check_tag(t, "E")
