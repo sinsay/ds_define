@@ -1,4 +1,4 @@
-from src.common.type_def.type_util import *
+from ..type_util import *
 
 
 def __test_build_mode_and_validate__():

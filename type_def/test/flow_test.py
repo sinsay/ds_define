@@ -1,5 +1,5 @@
-from src.common import fields, CommonBase
-from src.common.type_def.type_datasource import *
+from ... import fields, CommonBase
+from ..datasource import *
 
 # base model
 Base = fields.model("", dict(
