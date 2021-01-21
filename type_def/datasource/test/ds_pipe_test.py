@@ -16,7 +16,7 @@ def test_pipe():
 
     op = Datasource() \
         .select(user, info.age) \
-        .join(info.uid.like(user.id)) \
+        .join(info.uid.eq(user.id)) \
         .filter(user.id == 1)
 
     _p = fields.pipe(op).next(op).next(op, op, logic=fields.pipe.Or)

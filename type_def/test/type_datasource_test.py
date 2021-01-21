@@ -122,7 +122,7 @@ def __test_relation_save__():
             # result=None the pipe's processor's result will be the result inject to next step's args
             result_as="flow_id"
         ).next(
-            fields.loop(args.steps, item="step", index="i") \
+            fields.loop(args.steps, item="step", index="i", skip=1) \
             .it(
                 fields.datasource().save(step.exclude_primary())
                 .values(
